@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "capability_id": "member.lookup_balance",
+  "version": 1,
+  "target": {
+    "app": "meridian-teller-console",
+    "base_url": "http://127.0.0.1:8000",
+    "app_version_fingerprint": "sha256:9bd1a3cd33dfbd4f"
+  },
+  "inputs": {
+    "member_id": {
+      "type": "string",
+      "required": true,
+      "example": "12345",
+      "sensitive": true
+    }
+  },
+  "outputs": {
+    "savings_balance": {
+      "type": "number"
+    },
+    "member_found": {
+      "type": "boolean"
+    }
+  },
+  "steps": [
+    {
+      "id": "s0",
+      "action": "type",
+      "target": {
+        "primary": {
+          "strategy": "role",
+          "role": "textbox",
+          "name": "Member ID"
+        },
+        "fallbacks": [
+          {
+            "strategy": "text_near",
+            "label": "Member ID"
+          },
+          {
+            "strategy": "css",
+            "selector": "input[name=\"member_id\"]"
+          }
+        ]
+      },
+      "value": "{{member_id}}",
+      "condition": null,
+      "output": null,
+      "extract_label": null,
+      "risk_level": "safe"
+    },
+    {
+      "id": "s1",
+      "action": "click",
+      "target": {
+        "primary": {
+          "strategy": "role",
+          "role": "button",
+          "name": "Search"
+        },
+        "fallbacks": [
+          {
+            "strategy": "text_near",
+            "label": "Search"
+          }
+        ]
+      },
+      "value": null,
+      "condition": null,
+      "output": null,
+      "extract_label": null,
+      "risk_level": "safe"
+    },
+    {
+      "id": "s2",
+      "action": "extract",
+      "target": null,
+      "value": null,
+      "condition": null,
+      "output": "savings_balance",
+      "extract_label": "Savings Balance",
+      "risk_level": "safe"
+    }
+  ],
+  "checkpoint": {
+    "success": {
+      "role": "heading",
+      "name_contains": "Member Detail"
+    }
+  },
+  "business_outcomes": [
+    {
+      "when": {
+        "text_contains": "No member found"
+      },
+      "result": {
+        "member_found": false,
+        "savings_balance": null
+      },
+      "name": "member_not_found"
+    }
+  ],
+  "risk_level": "safe",
+  "tenant_overrides": {}
+}

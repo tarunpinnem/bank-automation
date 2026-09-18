@@ -1,0 +1,9 @@
+{"ts": 1789669542.2009182, "event": "replay_start", "capability_id": "subaccount.open", "version": 1, "tenant_id": null}
+{"ts": 1789669542.74742, "event": "navigate", "url": "http://127.0.0.1:8000", "attempt": 1}
+{"ts": 1789669545.798051, "event": "step_executed", "step_id": "s0", "action": "type"}
+{"ts": 1789669545.8740647, "event": "step_executed", "step_id": "s1", "action": "click"}
+{"ts": 1789669545.9573486, "event": "step_executed", "step_id": "s2", "action": "click"}
+{"ts": 1789669548.9948616, "event": "step_executed", "step_id": "s3", "action": "select"}
+{"ts": 1789669552.0223472, "event": "step_executed", "step_id": "s4", "action": "type"}
+{"ts": 1789669552.0932708, "event": "step_executed", "step_id": "s5", "action": "click"}
+{"ts": 1789669552.3322723, "event": "replay_business_outcome", "name": "validation_error_deposit_too_low", "outputs": {"account_number": null}}

@@ -1,0 +1,10 @@
+{"ts": 1789753148.7873468, "event": "replay_start", "capability_id": "member.lookup_balance", "version": 1, "tenant_id": null}
+{"ts": 1789753150.0463052, "event": "navigate", "url": "http://127.0.0.1:8000", "attempt": 1}
+{"ts": 1789753153.0969145, "event": "step_executed", "step_id": "s0", "action": "type"}
+{"ts": 1789753153.168752, "event": "step_executed", "step_id": "s1", "action": "click"}
+{"ts": 1789753153.1770563, "event": "recoverable_condition", "rule": "session_timeout_interstitial"}
+{"ts": 1789753153.2564428, "event": "recoverable_dismissed", "rule": "session_timeout_interstitial"}
+{"ts": 1789753153.2791693, "event": "navigate", "url": "http://127.0.0.1:8000", "attempt": 2}
+{"ts": 1789753156.3120818, "event": "step_executed", "step_id": "s0", "action": "type"}
+{"ts": 1789753156.3700652, "event": "step_executed", "step_id": "s1", "action": "click"}
+{"ts": 1789753156.4651623, "event": "replay_success", "outputs": {"savings_balance": "$4,820.55", "member_found": true}}

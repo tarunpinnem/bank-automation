@@ -1,0 +1,2 @@
+{"ts": 1789753262.9682162, "event": "replay_start", "capability_id": "member.lookup_balance", "version": 1, "tenant_id": null}
+{"ts": 1789753263.561195, "event": "navigate", "url": "http://127.0.0.1:8000/does-not-exist", "attempt": 1}

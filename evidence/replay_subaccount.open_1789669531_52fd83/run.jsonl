@@ -1,0 +1,9 @@
+{"ts": 1789669531.4291997, "event": "replay_start", "capability_id": "subaccount.open", "version": 1, "tenant_id": null}
+{"ts": 1789669531.9976988, "event": "navigate", "url": "http://127.0.0.1:8000", "attempt": 1}
+{"ts": 1789669535.0494926, "event": "step_executed", "step_id": "s0", "action": "type"}
+{"ts": 1789669535.1212356, "event": "step_executed", "step_id": "s1", "action": "click"}
+{"ts": 1789669535.2199988, "event": "step_executed", "step_id": "s2", "action": "click"}
+{"ts": 1789669538.2661872, "event": "step_executed", "step_id": "s3", "action": "select"}
+{"ts": 1789669541.2928522, "event": "step_executed", "step_id": "s4", "action": "type"}
+{"ts": 1789669541.3517354, "event": "step_executed", "step_id": "s5", "action": "click"}
+{"ts": 1789669541.43908, "event": "replay_success", "outputs": {"account_number": "SA-61804342"}}

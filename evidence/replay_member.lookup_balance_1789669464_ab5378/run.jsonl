@@ -1,0 +1,5 @@
+{"ts": 1789669464.355837, "event": "replay_start", "capability_id": "member.lookup_balance", "version": 1, "tenant_id": null}
+{"ts": 1789669464.9457405, "event": "navigate", "url": "http://127.0.0.1:8000", "attempt": 1}
+{"ts": 1789669467.995189, "event": "step_executed", "step_id": "s0", "action": "type"}
+{"ts": 1789669468.0546057, "event": "step_executed", "step_id": "s1", "action": "click"}
+{"ts": 1789669468.1401043, "event": "replay_success", "outputs": {"savings_balance": "$4,820.55", "member_found": true}}
