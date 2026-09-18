@@ -1,0 +1,9 @@
+{"ts": 1789773371.536454, "event": "replay_start", "capability_id": "subaccount.open", "version": 1, "tenant_id": null}
+{"ts": 1789773372.3680885, "event": "navigate", "url": "http://127.0.0.1:8000", "attempt": 1}
+{"ts": 1789773375.4602897, "event": "step_executed", "step_id": "s0", "action": "type"}
+{"ts": 1789773375.5301318, "event": "step_executed", "step_id": "s1", "action": "click"}
+{"ts": 1789773375.6478121, "event": "step_executed", "step_id": "s2", "action": "click"}
+{"ts": 1789773378.7191703, "event": "step_executed", "step_id": "s3", "action": "select"}
+{"ts": 1789773381.758412, "event": "step_executed", "step_id": "s4", "action": "type"}
+{"ts": 1789773381.761339, "event": "escalation_requested", "step_id": "s5", "reason": "Step 's5' (click) is marked risky and requires approval before it runs.", "evidence_dir": "/home/claude/bank-automation/evidence/replay_subaccount.open_1789773371_5b93da"}
+{"ts": 1789773385.7627537, "event": "escalation_cancelled", "by": "mock_operator_cli"}

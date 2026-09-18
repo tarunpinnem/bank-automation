@@ -135,9 +135,20 @@ python tests/test_replay.py
 ## Evidence
 
 `/evidence/` contains real run logs (`run.jsonl`, redacted) and screenshots from actual
-executions — two genuine LLM-driven discovery runs and replays covering all four
-terminal result kinds: `SUCCESS`, `BUSINESS_OUTCOME`, `HARD_FAILURE`, `ESCALATED`, plus a
-`RECOVERABLE`-condition auto-retry. See `REPORT.md` for how to read them.
+executions — two genuine LLM-driven discovery runs, plus replays covering every result
+kind. To check any of these without reading the whole directory:
+
+| What it proves | Evidence dir |
+|---|---|
+| Genuine LLM-driven discovery (2 real runs, 4 and 8 model turns) | `discover_member.lookup_balance_*`, `discover_subaccount.open_*` |
+| Replay `SUCCESS` | `replay_member.lookup_balance_1789669464_ab5378` |
+| Replay `BUSINESS_OUTCOME` (no such member) | `replay_member.lookup_balance_1789669468_f029d9` |
+| Replay `HARD_FAILURE` | `replay_member.lookup_balance_1789671657_3cb226` |
+| Replay `ESCALATED` (paused, human cancelled) | `replay_subaccount.open_1789773371_5b93da` |
+| `RECOVERABLE` auto-retry (session-timeout dismissed, then success) | `replay_member.lookup_balance_1789753148_b8d0ee` |
+| Live CDP handoff: paused → resumed by a second process → `SUCCESS` | `replay_subaccount.open_1789669557_b94c4b` |
+
+See `REPORT.md`'s Determinism & error handling section for how to read a `run.jsonl`.
 
 ## What's cut / not built
 

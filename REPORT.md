@@ -25,6 +25,13 @@ REPLAY (free, no LLM, every other time)
   -> exactly one RunResult: SUCCESS | BUSINESS_OUTCOME | HARD_FAILURE | ESCALATED
 ```
 
+**The cost model this buys, measured from this project's own evidence, not asserted:**
+discovering `member.lookup_balance` took 4 LLM turns / 12.3s wall clock;
+`subaccount.open` (more steps, a form) took 8 turns / 24.8s. Every replay after that is
+**0 LLM calls**, ~4s for the lookup and ~10s for the sub-account flow (`evidence/replay_*`
+timestamps). That's the "reliably and cheaply" the brief's Section 1 asks for, not a
+claim about it.
+
 **Perception is accessibility-tree-first**, not screenshot-first: `observe.py` turns
 Playwright's `page.accessibility.snapshot()` into a compact `role: 'name'` list. This is
 what still works with no clean DOM (the brief's own framing), and it's the same
@@ -83,20 +90,25 @@ dataclasses in `agent/artifact.py`; real examples in `artifacts/*.json`.
 
 ## Determinism & error handling
 
-Replay makes **zero LLM calls** and always returns exactly one of four terminal results:
+Replay makes **zero LLM calls** and always returns exactly one of four terminal results.
+Every row below is a real run — `evidence/<dir>/run.jsonl`, not a description:
 
-| Kind | Meaning | From this project's evidence |
+| Kind | Meaning | Real evidence dir |
 |---|---|---|
-| `SUCCESS` | Reached checkpoint, extracted outputs | member found, balance read |
-| `BUSINESS_OUTCOME` | Reached a *declared* alternate state | "No member found", deposit < $25 |
-| `HARD_FAILURE` | Nothing matched — genuinely unexpected | artifact pointed at a dead URL |
-| `ESCALATED` | Paused, didn't come back resumed | risky step, no approval in time |
+| `SUCCESS` | Reached checkpoint, extracted outputs | `replay_member.lookup_balance_1789669464_ab5378` |
+| `BUSINESS_OUTCOME` | Reached a *declared* alternate state | `replay_member.lookup_balance_1789669468_f029d9` |
+| `HARD_FAILURE` | Nothing matched — genuinely unexpected | `replay_member.lookup_balance_1789671657_3cb226` |
+| `ESCALATED` | Paused, didn't come back resumed | `replay_subaccount.open_1789773371_5b93da` (cancelled) |
 
 A fifth internal state, `RECOVERABLE`, never surfaces as final: a known interstitial
-(session-timeout page) is dismissed and the whole action sequence is retried from a fresh
-navigation (`MAX_ATTEMPTS = 2`). That's a deliberate simplification (see Cuts) — sound
-because both capabilities are idempotent flows re-entered from the home page, not because
-a general "resume mid-step" mechanism exists.
+(session-timeout page, armed via `POST /_admin/arm_timeout`) is dismissed and the whole
+action sequence is retried from a fresh navigation (`MAX_ATTEMPTS = 2`) — real run in
+`replay_member.lookup_balance_1789753148_b8d0ee` (two `navigate` events, one dismissal,
+then `SUCCESS`). The retry-the-whole-sequence approach is a deliberate simplification
+(see Cuts) — sound because both capabilities are idempotent flows re-entered from the
+home page, not because a general "resume mid-step" mechanism exists. (Escalation that
+*is* resumed by a human, rather than cancelled, is covered separately below — it isn't a
+`RunResult` kind, it's the live handoff itself.)
 
 Two bugs found and fixed are worth naming, since they're the "no clean DOM" failure mode
 the brief warns about, not generic flakiness:
@@ -114,8 +126,25 @@ hand-built artifact — no API key, no network. Coverage gaps are in Cuts.
 
 ## Heterogeneity & multi-tenant
 
-Two mechanisms, modeled on diffing a supplier config against a base template rather than
-a fully separate integration per tenant:
+**Surface abstraction.** The seam is `observe.py` + `act.py`: an artifact's steps target
+`{role, name}`, and `observe()`/`resolve()` are the only two functions that know the
+surface is a browser at all. Everything above that line — the artifact schema,
+`replay.py`'s attempt loop, the checkpoint/business-outcome contract — talks only in
+role/name/text, never in DOM terms. A legacy web app (iframes, framesets) is already the
+easy case: Playwright resolves frames the same way, so it's a change inside `observe()`,
+not to the schema. A desktop app is a bigger lift but the same shape: swap
+`page.accessibility.snapshot()` for an OS accessibility API (UI Automation on Windows,
+the Accessibility API on macOS) behind the same `observe() -> Observation` /
+`resolve(target) -> control` interface, and an artifact recorded against a desktop screen
+would still be `{role: "button", name: "Search"}` — the primary locator strategy carries
+over unchanged. Only the *fallback* strategies are surface-specific (`text_near` and
+`css` are DOM concepts); a desktop driver would need its own fallback family, which is
+new code behind the existing seam, not a schema redesign. None of this is built — it's
+the reason `act.py`'s strategies are named and pluggable rather than inlined into
+`replay.py`.
+
+**Multi-tenant reuse.** Two mechanisms, modeled on diffing a supplier config against a
+base template rather than a fully separate integration per tenant:
 
 **Base-config + override.** `Artifact.apply_tenant_override(tenant_id)` returns a new,
 patched artifact — the base is never mutated. An override can replace `target` fields
@@ -130,10 +159,8 @@ incidental text changes, sensitive to anything that would actually break locator
 resolution. A cheap, no-LLM-call tripwire, meant to be checked *before* a failed replay
 in production discovers the drift for you.
 
-Neither mechanism was run against a second, genuinely different app — both shipped
-artifacts target the one mock app. The mechanism is real and exercised via a hand-edited
-override; proving it against two independently-built apps was out of scope for the time
-available (see Cuts).
+Both mechanisms are real, hand-exercised code, not just design prose — but neither has
+been run against a second, genuinely different app (see Cuts).
 
 ## Escalation & handoff
 
@@ -162,10 +189,10 @@ What triggers escalation today: a `risky`-tagged step (replay) and the model's o
 returns to the caller. Routing hard failures into the same path is the most valuable next
 addition (Cuts).
 
-Scoped down deliberately: the "operator console" is a bare CLI, not a real-time
-co-browsing UI. The mechanism it proves — pause without closing, expose the live session
-over CDP, capture exactly what happened, resume — is real; the polish of *how* a human is
-shown the page is not what this submission spent its time on.
+Scoped down deliberately: the operator console is a bare CLI, not real-time co-browsing.
+The mechanism it proves — pause without closing, expose the live session over CDP,
+capture what happened, resume — is real; the console's polish is not what this submission
+spent its time on.
 
 ## Safety
 
@@ -196,21 +223,19 @@ output of real runs.
   agent-facing capability interface (exposing `artifacts/*.json` as a typed, invokable
   catalog) is what I'd build first.
 - **No automated coverage for `discover.py` or the operator/escalation flow** —
-  `tests/test_replay.py` covers the deterministic path fully with no API key. Discovery
-  and handoff were verified by running them for real, not by a repeatable harness; mocking
+  `tests/test_replay.py` covers the deterministic path fully with no API key; discovery
+  and handoff were verified by running them for real, not a repeatable harness. Mocking
   the Anthropic tool-use responses and scripting a "virtual operator" over CDP is next.
 - **`HARD_FAILURE` doesn't trigger escalation** — only a risky step or the model's own
   `escalate` call does today. Routing hard failures into the same path is the clearest gap.
 - **Recoverable retry redoes the whole action sequence**, not just the interrupted step —
   sound for these two idempotent flows, not a general "resume from step N" mechanism.
-- **No diffing of human corrections back into the artifact** — the operator captures what
-  a human did into evidence, but nothing compares it against what the artifact expected.
-  A scoped version, for the risky-step case where we know exactly which step the human
-  stood in for, would flag "drift suspected, review before re-recording" rather than
-  auto-committing. Not built; the clearest "with another day" item.
-- **Multi-tenant override mechanism isn't proven against two different real apps** — real
-  code, hand-exercised, but only one target app shipped here.
+- **No diffing of human corrections back into the artifact** — captured in evidence, but
+  never compared against what the artifact expected. A scoped version, for the risky-step
+  case where we know exactly which step the human stood in for, would flag "drift
+  suspected" rather than auto-committing. The clearest "with another day" item.
+- **One mock app, two capabilities, and the surface/tenant mechanisms only hand-exercised**
+  — real code (overrides, fingerprinting, the observe/act seam), not proven against a
+  second real app or a desktop surface; that was out of scope for the time available.
 - **The operator console is a bare CLI**, not real-time co-browsing — scoped down
   deliberately; see Escalation & handoff.
-- **One mock app, two capabilities** — enough to prove the full loop without spreading
-  effort across more surfaces than the time available could do justice to.
