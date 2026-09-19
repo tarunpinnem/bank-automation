@@ -10,7 +10,13 @@ import os
 from dataclasses import dataclass
 from playwright.sync_api import sync_playwright, Browser, Page, Playwright
 
-CHROMIUM_PATH = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
+# Optional override for environments that pin a specific Chromium binary
+# (e.g. a sandboxed CI image with a pre-installed, non-default browser path).
+# Unset by default -- Playwright then resolves its own installed browser the
+# normal way (respects its own PLAYWRIGHT_BROWSERS_PATH if set, otherwise the
+# standard per-OS cache dir from `playwright install chromium`). Hardcoding a
+# path here would only work on the one machine it was recorded on.
+CHROMIUM_PATH = os.environ.get("AGENT_CHROMIUM_PATH")
 CDP_PORT = int(os.environ.get("AGENT_CDP_PORT", "9333"))
 
 
@@ -30,11 +36,13 @@ class Session:
 def launch(headless: bool = True) -> Session:
     """Start a fresh browser+page with CDP enabled on a fixed port."""
     pw = sync_playwright().start()
-    browser = pw.chromium.launch(
-        executable_path=CHROMIUM_PATH,
-        headless=headless,
-        args=[f"--remote-debugging-port={CDP_PORT}", "--remote-debugging-address=0.0.0.0"],
-    )
+    launch_kwargs: dict = {
+        "headless": headless,
+        "args": [f"--remote-debugging-port={CDP_PORT}", "--remote-debugging-address=0.0.0.0"],
+    }
+    if CHROMIUM_PATH:
+        launch_kwargs["executable_path"] = CHROMIUM_PATH
+    browser = pw.chromium.launch(**launch_kwargs)
     page = browser.new_page()
     return Session(playwright=pw, browser=browser, page=page)
 
