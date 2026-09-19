@@ -5,9 +5,18 @@ raw HTML or screenshot coordinates -- this is the representation that
 still works when the surface has no clean DOM (the brief's explicit bias),
 and it's also what the artifact recorder uses to build reviewable,
 human-readable locators.
+
+Built on Page.locator("body").aria_snapshot() (Playwright's current, YAML-based
+accessibility-tree API). The older `page.accessibility.snapshot()` this was
+originally written against was removed from Playwright entirely (gone as of
+the 1.6x series) -- any fresh `pip install playwright` today only has the
+newer API, so `_parse_aria_snapshot` below turns that YAML text back into the
+same {role, name, children} shape the rest of this module (and fingerprint.py)
+already expects, keeping the traversal/name-recovery logic unchanged.
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from playwright.sync_api import Page
 
@@ -57,7 +66,12 @@ def _walk(node: dict, path: tuple[int, ...], out: list[ObservedElement], state: 
     role = (node.get("role") or "").lower()
     name = (node.get("name") or "").strip()
 
-    if role == "text" and name:
+    # aria_snapshot() folds plain text into the name of its nearest labeled
+    # ancestor/sibling container (e.g. a table cell) instead of emitting a
+    # separate "text" node the way the old accessibility tree did -- so any
+    # named, non-interactive node is a candidate label source, not just an
+    # explicit "text" role.
+    if name and role not in INTERACTIVE_ROLES:
         state["last_text"] = name
 
     if role in INTERACTIVE_ROLES:
@@ -77,8 +91,51 @@ def _walk(node: dict, path: tuple[int, ...], out: list[ObservedElement], state: 
         _walk(child, path + (i,), out, state)
 
 
+# Matches one line of Playwright's aria_snapshot() YAML, e.g.:
+#   - textbox "Member ID" [level=2]:
+# Property lines like "- /url: /" are handled separately (see _parse_aria_snapshot).
+_LINE_RE = re.compile(
+    r'^(?P<indent>\s*)-\s+(?P<role>[A-Za-z][A-Za-z0-9_-]*)'
+    r'(?:\s+"(?P<name>(?:[^"\\]|\\.)*)")?'
+    r'(?:\s+\[[^\]]*\])?'
+    r':?\s*$'
+)
+
+
+def _parse_aria_snapshot(text: str) -> dict:
+    """Parse aria_snapshot()'s indented YAML into the {role, name, children}
+    tree shape _walk() expects (the same shape the old accessibility.snapshot()
+    dict returned)."""
+    root: dict = {"role": "root", "name": "", "children": []}
+    stack: list[tuple[int, dict]] = [(-1, root)]
+
+    for raw_line in text.splitlines():
+        if not raw_line.strip():
+            continue
+        stripped = raw_line.lstrip(" ")
+        indent = len(raw_line) - len(stripped)
+        # Pseudo-property lines (e.g. "/url: /", "/checked: true") describe
+        # an attribute of the previous node, not a new accessibility node --
+        # skip them rather than mis-parsing them as a role.
+        if stripped.startswith("- /"):
+            continue
+        m = _LINE_RE.match(raw_line)
+        if not m:
+            continue
+        level = indent // 2
+        name = (m.group("name") or "").replace('\\"', '"')
+        node: dict = {"role": m.group("role"), "name": name, "children": []}
+        while stack and stack[-1][0] >= level:
+            stack.pop()
+        stack[-1][1]["children"].append(node)
+        stack.append((level, node))
+
+    return root
+
+
 def observe(page: Page) -> Observation:
-    snapshot = page.accessibility.snapshot() or {}
+    snapshot_text = page.locator("body").aria_snapshot()
+    snapshot = _parse_aria_snapshot(snapshot_text)
     elements: list[ObservedElement] = []
     _walk(snapshot, (), elements, state={})
 

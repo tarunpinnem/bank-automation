@@ -33,7 +33,7 @@ timestamps). That's the "reliably and cheaply" the brief's Section 1 asks for, n
 claim about it.
 
 **Perception is accessibility-tree-first**, not screenshot-first: `observe.py` turns
-Playwright's `page.accessibility.snapshot()` into a compact `role: 'name'` list. This is
+Playwright's `aria_snapshot()` into a compact `role: 'name'` list. This is
 what still works with no clean DOM (the brief's own framing), and it's the same
 vocabulary `recorder.py` turns into locators — what the model saw and what the artifact
 targets never have to be kept in sync by hand.
@@ -132,8 +132,8 @@ surface is a browser at all. Everything above that line — the artifact schema,
 `replay.py`'s attempt loop, the checkpoint/business-outcome contract — talks only in
 role/name/text, never in DOM terms. A legacy web app (iframes, framesets) is already the
 easy case: Playwright resolves frames the same way, so it's a change inside `observe()`,
-not to the schema. A desktop app is a bigger lift but the same shape: swap
-`page.accessibility.snapshot()` for an OS accessibility API (UI Automation on Windows,
+not to the schema. A desktop app is a bigger lift but the same shape: swap Playwright's
+`aria_snapshot()` for an OS accessibility API (UI Automation on Windows,
 the Accessibility API on macOS) behind the same `observe() -> Observation` /
 `resolve(target) -> control` interface, and an artifact recorded against a desktop screen
 would still be `{role: "button", name: "Search"}` — the primary locator strategy carries

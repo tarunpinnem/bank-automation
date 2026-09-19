@@ -5,7 +5,7 @@
   "target": {
     "app": "meridian-teller-console",
     "base_url": "http://127.0.0.1:8000",
-    "app_version_fingerprint": "sha256:9bd1a3cd33dfbd4f"
+    "app_version_fingerprint": "sha256:8aba87b44764c003"
   },
   "inputs": {
     "member_id": {

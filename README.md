@@ -144,6 +144,8 @@ kind. To check any of these without reading the whole directory:
 | Replay `SUCCESS` | `replay_member.lookup_balance_1789669464_ab5378` |
 | Replay `BUSINESS_OUTCOME` (no such member) | `replay_member.lookup_balance_1789669468_f029d9` |
 | Replay `HARD_FAILURE` | `replay_member.lookup_balance_1789671657_3cb226` |
+| Replay `SUCCESS`, `subaccount.open` (own path, not just via the handoff below) | `replay_subaccount.open_1789669531_52fd83` |
+| Replay `BUSINESS_OUTCOME`, `subaccount.open` (validation error) | `replay_subaccount.open_1789669542_36f3d5` |
 | Replay `ESCALATED` (paused, human cancelled) | `replay_subaccount.open_1789773371_5b93da` |
 | `RECOVERABLE` auto-retry (session-timeout dismissed, then success) | `replay_member.lookup_balance_1789753148_b8d0ee` |
 | Live CDP handoff: paused → resumed by a second process → `SUCCESS` | `replay_subaccount.open_1789669557_b94c4b` |
